@@ -1,0 +1,153 @@
+#include <iostream>
+#include <deque>
+#include <vector>
+#include <conio.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+using namespace std;
+class cPlayer
+{
+public:
+	int rx, ry;
+	cPlayer(int width) { rx = width / 2; ry = 0; }
+};
+class cLane
+{
+private:
+	deque<bool> cars;
+	bool right;
+public:
+	cLane(int width)
+	{
+		for (int i = 0; i < width; i++)
+			cars.push_front(true);
+		right = rand() % 2;
+	}
+	void Move()
+	{
+		if (right)
+		{
+			if (rand() % 10 == 1)
+				cars.push_front(true);
+			else
+				cars.push_front(false);
+			cars.pop_back();
+		}
+		else
+		{
+			if (rand() % 10 == 1)
+				cars.push_back(true);
+			else
+				cars.push_back(false);
+			cars.pop_front();
+		}
+
+	}
+	bool CheckPos(int pos) { return cars[pos]; }
+	void ChangeDirection() { right = !right; }
+};
+class cGame
+{
+private:
+	bool quit;
+	int numberOfLanes;
+	int width;
+	int crossing_score=0;
+	cPlayer * player;
+	vector<cLane*> map;
+public:
+	cGame(int w = 20, int h = 10)
+	{
+		numberOfLanes = h;
+		width = w;
+		quit = false;
+		for (int i = 0; i < numberOfLanes; i++)
+			map.push_back(new cLane(width));
+		player = new cPlayer(width);
+	}
+	~cGame()
+	{
+		delete player;
+		for (int i = 0; i < map.size(); i++)
+		{
+			cLane * current = map.back();
+			map.pop_back();
+			delete current;
+		}
+	}
+	void rDraw()
+	{
+		system("cls");
+		for (int i = 0; i < numberOfLanes; i++)
+		{
+			for (int j = 0; j < width; j++)
+			{
+				if (i == 0 && (j == 0 || j == width - 1)) cout << "S";
+				if (i == numberOfLanes - 1 && (j == 0 || j == width - 1)) cout << "F";
+				if (map[i]->CheckPos(j) && i != 0 && i != numberOfLanes - 1)
+					cout << "#";
+				else if (player->rx == j && player->ry == i)
+					cout << "V";
+				else
+					cout << " ";
+			}
+			cout << endl;
+		}
+		cout << "Score: " << crossing_score << endl;
+	}
+	void rInput()
+	{
+		if (_kbhit())
+		{
+			char current = _getch();
+			if (current == 'a')
+				player->rx--;
+			if (current == 'd')
+				player->rx++;
+			if (current == 'w')
+				player->ry--;
+			if (current == 's')
+				player->ry++;
+			if (current == 'q')
+				quit = true;
+		}
+	}
+	void rLogic()
+	{
+		for (int i = 1; i < numberOfLanes - 1; i++)
+		{
+			if (rand() % 10 == 1)
+				map[i]->Move();
+			if (map[i]->CheckPos(player->rx) && player->ry == i)
+				quit = true;
+		}
+		if (player->ry == numberOfLanes - 1)
+		{
+			crossing_score++;
+			player->ry = 0;
+			cout << "\x07";
+			map[rand() % numberOfLanes]->ChangeDirection();
+		}
+	}
+	void Run()
+	{
+		while (!quit)
+		{
+			rInput();
+			rDraw();
+			rLogic();
+		}
+	}
+};
+
+void iteration3()
+{
+	srand(time(NULL));
+	cGame game(30, 5);
+	game.Run();
+	cout << "Game over!" << endl;
+	getchar();
+}
+
